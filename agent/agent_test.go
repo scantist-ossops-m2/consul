@@ -29,6 +29,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/tcpproxy"
@@ -38,7 +39,6 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
-	"gopkg.in/square/go-jose.v2/jwt"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/hcp-scada-provider/capability"
@@ -6341,6 +6341,7 @@ func TestAgent_scadaProvider(t *testing.T) {
 	pvd.EXPECT().Listen(scada.CAPCoreAPI.Capability()).Return(l, nil).Once()
 	pvd.EXPECT().Stop().Return(nil).Once()
 	a := TestAgent{
+		HCL: `cloud = { resource_id = "test-resource-id" client_id = "test-client-id" client_secret = "test-client-secret" }`,
 		OverrideDeps: func(deps *BaseDeps) {
 			deps.HCP.Provider = pvd
 		},
