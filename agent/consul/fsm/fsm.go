@@ -267,9 +267,17 @@ func (c *FSM) Restore(old io.ReadCloser) error {
 				return err
 			}
 		default:
+			//TODO: This cannot currently allow for skipping Ent records on restore, because every remaining byte of
+			// the first Ent record is misinterpreted as a header during the decode loop. This is because we never
+			// actually consume the ignored record from the decoder's wrapped io.Reader. Given snapshot records are not
+			// enveloped, a solution likely involves replicating Ent structs in restorers similar to our approach in
+			// decode_downgrade.go (used by Apply(...)), and using those to consume and discard the record.
 			if structs.CEDowngrade && msg >= 64 {
 				c.logger.Warn("ignoring enterprise message , for downgrading to oss", "type", msg)
-				return nil
+				return fmt.Errorf("msg type <%d> is a Consul Enterprise log entry. "+
+					"Consul CE does not currently support restoration of Ent snapshots when using the CONSUL_ENTERPRISE_DOWNGRADE_TO_CE flag. "+
+					"To restore from an Ent snapshot, first restore it on an Ent server, then follow the CE downgrade instructions. "+
+					"After successfully downgrading, take a new snapshot of CE state", msg)
 			} else if msg >= 64 {
 				return fmt.Errorf("msg type <%d> is a Consul Enterprise log entry. Consul CE cannot restore it", msg)
 			} else {
